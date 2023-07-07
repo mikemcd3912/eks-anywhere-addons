@@ -2,7 +2,7 @@ name: Run CI for ISV Addons
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, ghActions]
     types: [opened, reopened, synchronize]
 
 jobs:
