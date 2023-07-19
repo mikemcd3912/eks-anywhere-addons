@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: podinfo-configmap
-data:
-  Namespace: podinfo
-  prNumber: 1
