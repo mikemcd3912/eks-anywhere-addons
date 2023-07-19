@@ -53,35 +53,21 @@ jobs:
           echo "No namespace.yaml file found"
           exit 200
         fi
-          
-    - name: Generate the config map file content and Push it to Developer Branch
+    - name: Copy over new or updated files
       run: |
         git config --local user.email "dev@null"
         git config --local user.name "Conformitron Bot"
         git fetch origin developer_branch
         git checkout developer_branch
         git fetch --all
-        git merge --no-ff ${{ github.event.pull_request.head.ref }} --allow-unrelated-histories --no-edit
-        git push
-        
-    - name: Move committed files to developer branches
+        echo files | forEach "echo \${/subdirectory}$/\${item}"
+          
+      
+    - name: Generate the config map file content and Push it to Developer Branch
       run: |
-        files=$(curl -s "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" | jq -r '.[].filename')
-        echo $files
-        namespace_file=$(echo "$files" | grep "namespace.yaml")
-        if [ -n "$namespace_file" ]; then
-          subdirectory=$(dirname $namespace_file)
-          echo "Sub Directory = $subdirectory"
-        else 
-          echo "No namespace.yaml file found"
-          exit 200
-        fi
         git config --local user.email "dev@null"
         git config --local user.name "Conformitron Bot"
-        git fetch origin main
         git checkout developer_branch
-        git checkout ${{ github.event.pull_request.head.ref }} -- $subdirectory
-        git add .
-        git commit -m "Copy committed files"
+        git fetch --all
         git merge --no-ff ${{ github.event.pull_request.head.ref }} --allow-unrelated-histories --no-edit
         git push
