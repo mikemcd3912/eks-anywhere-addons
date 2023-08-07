@@ -14,13 +14,32 @@ jobs:
       uses: actions/checkout@v2
       with:
         ref: ${{ github.event.pull_request.head.ref }}
-
-    - name: Find Namespace YAML
+        
+    - name: Parse Namespace data, Create ConfigMap and Copy over committed files 
       id: find-namespace-yaml
       run: |
+        # Pull files down into a filename array
         files=$(curl -s "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" | jq -r '.[].filename')
         echo $files
-        namespace_file=$(echo "$files" | grep "namespace.yaml")
+        filearr=($files)
+        subdirectory=$(dirname ${filearr[0]})
+        
+        # Find Namespace File in uploads list or in modified file subdirectory
+        if [ -z $namespace_file ]; then
+          if [ -f "${subdirectory}/namespace.yaml" ]; then
+            namespace_file="${subdirectory}/namespace.yaml"
+            echo "updated namespace file = $namespace_file"
+          elif [echo "$files" | grep "namespace.yaml"]; then
+            namespace_file=$(echo "$files" | grep "namespace.yaml") || echo "No Namespace File Found" && exit 200
+          else
+            echo "No Namespace file found in commit or subdirectory"
+            exit 200
+          fi
+        else
+          echo "namespace File = $namespace_file"
+        fi
+        
+        # Parse namespace data
         if [ -n "$namespace_file" ]; then
           subdirectory=$(dirname $namespace_file)
           echo "Sub Directory = $subdirectory"
@@ -44,7 +63,7 @@ jobs:
             git config --local user.email "dev@null"
             git config --local user.name "Conformitron Bot"
             git add .
-            git commit -m "Add config map for namespace $namespace and PR number ${{ github.event.pull_request.number }}"
+            git commit -m "Add config map for ${namespace}_PR_${{ github.event.pull_request.number }}"
           else 
             echo "No Namespace found"
             exit 100
@@ -53,35 +72,27 @@ jobs:
           echo "No namespace.yaml file found"
           exit 200
         fi
-          
-    - name: Generate the config map file content and Push it to Developer Branch
-      run: |
+
+        # Switch to Dev branch and make files commit 
         git config --local user.email "dev@null"
         git config --local user.name "Conformitron Bot"
         git fetch origin developer_branch
         git checkout developer_branch
         git fetch --all
-        git merge --no-ff ${{ github.event.pull_request.head.ref }} --allow-unrelated-histories --no-edit
+      
+        # checkout each file to Dev branch
+        for item in $files; do
+          git checkout ${{ github.event.pull_request.head.ref }} -- $item
+          git add $item
+        done
+        git commit -m "Adding new and changed files for ${namespace}_PR_${{ github.event.pull_request.number }}"
         git push
-        
-    - name: Move committed files to developer branches
+      
+    - name: Generate the config map file content and Push it to Developer Branch
       run: |
-        files=$(curl -s "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" | jq -r '.[].filename')
-        echo $files
-        namespace_file=$(echo "$files" | grep "namespace.yaml")
-        if [ -n "$namespace_file" ]; then
-          subdirectory=$(dirname $namespace_file)
-          echo "Sub Directory = $subdirectory"
-        else 
-          echo "No namespace.yaml file found"
-          exit 200
-        fi
         git config --local user.email "dev@null"
         git config --local user.name "Conformitron Bot"
-        git fetch origin main
         git checkout developer_branch
-        git checkout ${{ github.event.pull_request.head.ref }} -- $subdirectory
-        git add .
-        git commit -m "Copy committed files"
+        git fetch --all
         git merge --no-ff ${{ github.event.pull_request.head.ref }} --allow-unrelated-histories --no-edit
         git push
