@@ -54,9 +54,13 @@ jobs:
             echo "kind: ConfigMap" >> $config_map_file
             echo "metadata:" >> $config_map_file
             echo "  name: $namespace-configmap" >> $config_map_file
+            echo "  namespace: $namespace" >> $config_map_file
+            echo "  labels:" >> $config_map_file
+            echo "    bot: conformitron" >> $config_map_file
             echo "data:" >> $config_map_file
             echo "  Namespace: ${namespace}" >> $config_map_file
-            echo "  prNumber: ${{ github.event.pull_request.number }}" >> $config_map_file
+            echo "  prNumber: \"${{ github.event.pull_request.number }}\"" >> $config_map_file
+            echo "  commitHash: ${{ github.event.pull_request.head.sha }}" >> $config_map_file
             echo $subdirectory
             echo $config_map_file
             mv $config_map_file ./$subdirectory/
@@ -73,26 +77,32 @@ jobs:
           exit 200
         fi
 
-        # Switch to Dev branch and make files commit 
-        git config --local user.email "dev@null"
-        git config --local user.name "Conformitron Bot"
-        git fetch origin developer_branch
-        git checkout developer_branch
-        git fetch --all
-      
+        # if files were updated, Move those files over
+        if [${#files[@]} -eq 0]; then
+          # Switch to Dev branch and make files commit 
+          git fetch --all
+          git config --local user.email "dev@null"
+          git config --local user.name "Conformitron Bot"
+          git fetch origin developer_branch
+          git checkout developer_branch
+        
         # checkout each file to Dev branch
-        for item in $files; do
-          git checkout ${{ github.event.pull_request.head.ref }} -- $item
-          git add $item
-        done
-        git commit -m "Adding new and changed files for ${namespace}_PR_${{ github.event.pull_request.number }}"
-        git push
-      
-    - name: Generate the config map file content and Push it to Developer Branch
+          for item in $files; do
+            git checkout ${{ github.event.pull_request.head.ref }} -- $item
+            git add $item
+            echo $item
+          done
+          git commit -m "Adding new and changed files for ${namespace}_PR_${{ github.event.pull_request.number }}"
+          git push
+        else
+          echo "No other files updated"
+        fi
+        
+    - name: Merge over the newly added files and ConfigMap
       run: |
+        git fetch --all
         git config --local user.email "dev@null"
         git config --local user.name "Conformitron Bot"
         git checkout developer_branch
-        git fetch --all
         git merge --no-ff ${{ github.event.pull_request.head.ref }} --allow-unrelated-histories --no-edit
         git push
