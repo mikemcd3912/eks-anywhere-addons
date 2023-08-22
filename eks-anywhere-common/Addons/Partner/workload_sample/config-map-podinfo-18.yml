@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: podinfo-configmap
+  namespace: podinfo
+  labels:
+    bot: conformitron
+data:
+  Namespace: podinfo
+  prNumber: "18"
+  commitHash: 95afc5f1376fc4d65a774a1f0ebd3f290f6eec9f
