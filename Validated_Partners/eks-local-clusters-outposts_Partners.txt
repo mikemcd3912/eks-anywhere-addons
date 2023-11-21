@@ -17,3 +17,4 @@ perfectscale     perfectscale
 pulumi           pulumi-kubernetes-operator
 sysdig           sysdig-agent
 hashicorp        vault
+testpartner      testproduct
