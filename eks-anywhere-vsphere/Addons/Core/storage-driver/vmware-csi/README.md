@@ -43,4 +43,3 @@ vcenter:
       datacenters:
       - <Your Datacenter(s)>
 ```
-update
