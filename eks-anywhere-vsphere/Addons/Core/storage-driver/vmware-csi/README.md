@@ -14,6 +14,7 @@ vsphere.conf that is referenced in the vsphere-cloud-controller.yaml file
 
 Both secrets are multi-line configs, so the "Plaintext" secret type must be used. 
 
+
 In csi-vsphere.conf, the secret will contain Global configuration data and Virtual Center specific information in the following format:
 
 ```
