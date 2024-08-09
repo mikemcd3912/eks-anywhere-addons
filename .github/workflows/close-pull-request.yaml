@@ -124,6 +124,7 @@ jobs:
             if [[ -n $namespace_name ]]; then
               namespace=$(echo $namespace_name | xargs echo -n)
               config_map_file="config-map-$namespace.yml"
+              environment_folder=$()
               echo "apiVersion: v1" >> $config_map_file
               echo "kind: ConfigMap" >> $config_map_file
               echo "metadata:" >> $config_map_file
@@ -138,6 +139,7 @@ jobs:
               echo "  lastPointOfContact: ${{ github.event.pull_request.user.login }}" >> $config_map_file
               echo "  approved: \"$(date +%s)\"" >> $config_map_file
               echo "  env: $(echo $subdirectory | cut -f1 -d/ | awk -F-  '{print $NF}' )"  >> $config_map_file
+              echo "  testJobName: $(grep  -Rnw "$/Testers/$partner_name" -e "kind: CronJob" -l | <TODO>)"
               mkdir -p ./$namespace_file_subdirectory/
               mv "$config_map_file" ./$namespace_file_subdirectory/
               git add ./$namespace_file_subdirectory/
